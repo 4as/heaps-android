@@ -99,5 +99,19 @@ class Main extends hxd.App {
 	public static function removeUpdateLoop(callback:Float->Void) {
 		INSTANCE.arrLoops.remove(callback);
 	}
+	
+	/**
+	 * Gets a full, writable path for a file. The result can be directly used with the Heaps Save.save() method.
+	 * Android provides a specific directory for your application where you can save your files. Save.save() doesn't do it for you automatically, hence this helper function.
+	 * @param filename A fully qualified path to a writable file.
+	 */
+	public static function getFilePath(filename:String) {
+		#if mobile
+		var path:String = hxd.mobile.AndroidTools.get_writable_directory() + "/" + filename;
+		#else
+		var path:String = filename;
+		#end
+		return path;
+	}
 }
 
