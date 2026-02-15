@@ -3,21 +3,29 @@ plugins {
 }
 
 android {
-    compileSdk 31
-    ndkVersion "18.1.1"
+    compileSdk 33
+    ndkVersion "27.3.13750724"
+    namespace "com.example.heapsandroid.helloworld"
 
     defaultConfig {
         applicationId "com.example.heapsandroid.helloworld"
         minSdk 21
-        targetSdk 31
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                cppFlags ''
-                arguments "-DANDROID_LD=lld"
+                cppFlags "-D_DEFAULT_SOURCE=1 -DHAVE_GCC_DESTRUCTOR=1"
+                arguments "-DANDROID_LD=lld", "-DANDROID_PLATFORM=android-24",
+                        '-DALSOFT_NO_CONFIG_UTIL=ON',
+                        '-DALSOFT_EXAMPLES=OFF',
+                        '-DALSOFT_UTILS=OFF',
+                        '-DALSOFT_TESTS=OFF',
+                        '-DALSOFT_NATIVE_TOOLS_PATH=' + projectDir.absolutePath + '/src/main/cpp/openal-nativetools',
+                        '-DALSOFT_REQUIRE_OPENSL=ON',
+                        '-DALSOFT_EMBED_HRTF_DATA=ON'
             }
         }
     }

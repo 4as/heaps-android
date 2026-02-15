@@ -1,0 +1,18 @@
+-lib heaps:2.1.0
+-D windowSize=800x600
+-D resourcesPath=res
+-cp src
+-main Main
+#-debug
+--each
+-lib hlsdl:1.15.0
+-lib hlopenal
+-D hlgen.makefile=vs2017
+-D hlgen.makefilepath=out
+--define mobile=true
+-hl out/game.c
+--next
+-lib hlsdl:1.15.0
+-lib hlopenal
+#-debug
+-hl main.hl
