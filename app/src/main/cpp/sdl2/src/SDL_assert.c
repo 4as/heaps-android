@@ -42,7 +42,15 @@
 #endif
 
 #if defined(__EMSCRIPTEN__)
-#include <emscripten.h>
+    #include <emscripten.h>
+    /* older Emscriptens don't have this, but we need to for wasm64 compatibility. */
+    #ifndef MAIN_THREAD_EM_ASM_PTR
+        #ifdef __wasm64__
+            #error You need to upgrade your Emscripten compiler to support wasm64
+        #else
+            #define MAIN_THREAD_EM_ASM_PTR MAIN_THREAD_EM_ASM_INT
+        #endif
+    #endif
 #endif
 
 /* The size of the stack buffer to use for rendering assert messages. */
@@ -251,7 +259,7 @@ static SDL_assert_state SDLCALL SDL_PromptAssertion(const SDL_assert_data *data,
         for (;;) {
             SDL_bool okay = SDL_TRUE;
             /* *INDENT-OFF* */ /* clang-format off */
-            int reply = MAIN_THREAD_EM_ASM_INT({
+            char *buf = (char *) MAIN_THREAD_EM_ASM_PTR({
                 var str =
                     UTF8ToString($0) + '\n\n' +
                     'Abort/Retry/Ignore/AlwaysIgnore? [ariA] :';
@@ -259,31 +267,26 @@ static SDL_assert_state SDLCALL SDL_PromptAssertion(const SDL_assert_data *data,
                 if (reply === null) {
                     reply = "i";
                 }
-                return reply.length === 1 ? reply.charCodeAt(0) : -1;
+                return allocate(intArrayFromString(reply), 'i8', ALLOC_NORMAL);
             }, message);
             /* *INDENT-ON* */ /* clang-format on */
 
-            switch (reply) {
-            case 'a':
+            if (SDL_strcmp(buf, "a") == 0) {
                 state = SDL_ASSERTION_ABORT;
 #if 0 /* (currently) no break functionality on Emscripten */
-            case 'b':
+            } else if (SDL_strcmp(buf, "b") == 0) {
                 state = SDL_ASSERTION_BREAK;
-                break;
 #endif
-            case 'r':
+            } else if (SDL_strcmp(buf, "r") == 0) {
                 state = SDL_ASSERTION_RETRY;
-                break;
-            case 'i':
+            } else if (SDL_strcmp(buf, "i") == 0) {
                 state = SDL_ASSERTION_IGNORE;
-                break;
-            case 'A':
+            } else if (SDL_strcmp(buf, "A") == 0) {
                 state = SDL_ASSERTION_ALWAYS_IGNORE;
-                break;
-            default:
+            } else {
                 okay = SDL_FALSE;
-                break;
             }
+            free(buf);
 
             if (okay) {
                 break;

@@ -975,8 +975,8 @@ static int SetDrawState(GLES2_RenderData *data, const SDL_RenderCommand *cmd, co
     }
 
     if (texture) {
-        uintptr_t base = (uintptr_t)vertices + cmd->data.draw.first; // address of first vertex, or base offset when using VBOs.
-        data->glVertexAttribPointer(GLES2_ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(base + offsetof(SDL_Vertex, tex_coord)));
+        SDL_Vertex *verts = (SDL_Vertex *)(((Uint8 *)vertices) + cmd->data.draw.first);
+        data->glVertexAttribPointer(GLES2_ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)&verts->tex_coord);
     }
 
     if (GLES2_SelectProgram(data, imgsrc, texture ? texture->w : 0, texture ? texture->h : 0) < 0) {
@@ -1009,9 +1009,9 @@ static int SetDrawState(GLES2_RenderData *data, const SDL_RenderCommand *cmd, co
 
     /* all drawing commands use this */
     {
-        uintptr_t base = (uintptr_t)vertices + cmd->data.draw.first; // address of first vertex, or base offset when using VBOs.
-        data->glVertexAttribPointer(GLES2_ATTRIBUTE_POSITION, 2, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(base + offsetof(SDL_VertexSolid, position)));
-        data->glVertexAttribPointer(GLES2_ATTRIBUTE_COLOR, 4, GL_UNSIGNED_BYTE, GL_TRUE /* Normalized */, stride, (const GLvoid *)(base + offsetof(SDL_VertexSolid, color)));
+        SDL_VertexSolid *verts = (SDL_VertexSolid *)(((Uint8 *)vertices) + cmd->data.draw.first);
+        data->glVertexAttribPointer(GLES2_ATTRIBUTE_POSITION, 2, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)&verts->position);
+        data->glVertexAttribPointer(GLES2_ATTRIBUTE_COLOR, 4, GL_UNSIGNED_BYTE, GL_TRUE /* Normalized */, stride, (const GLvoid *)&verts->color);
     }
 
     return 0;
@@ -1200,8 +1200,7 @@ static int GLES2_RunCommandQueue(SDL_Renderer *renderer, SDL_RenderCommand *cmd,
     if (data->current_vertex_buffer >= SDL_arraysize(data->vertex_buffers)) {
         data->current_vertex_buffer = 0;
     }
-    // attrib pointers will be offsets into the VBO.
-    vertices = (void *)(uintptr_t)0; // must be the exact value 0, not NULL (the representation of NULL is not guaranteed to be 0).
+    vertices = NULL; /* attrib pointers will be offsets into the VBO. */
 #endif
 
     while (cmd) {
@@ -2221,8 +2220,8 @@ SDL_RenderDriver GLES2_RenderDriver = {
     { "opengles2",
       (SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE),
       4,
-      { SDL_PIXELFORMAT_RGBA32,
-        SDL_PIXELFORMAT_BGRA32,
+      { SDL_PIXELFORMAT_BGRA32,
+        SDL_PIXELFORMAT_ABGR32,
         SDL_PIXELFORMAT_BGRX32,
         SDL_PIXELFORMAT_RGBX32 },
       0,
