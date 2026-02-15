@@ -1,8 +1,8 @@
 # Heaps Android
 
-An Android Studio project for a simple Heaps.io application. If you're working on the latest Haxe + Heaps + Hashlink versions, building an Android app should be as easy as copy and pasting the compiled C code into the project and building it. 
+An Android Studio project for a simple Heaps.io application. If you're using the latest versions of Haxe, Heaps, and Hashlink, building an Android app should be as simple as copying the compiled C code into the project and building it.
 
-The project wouldn't be possible without the work already done by: https://github.com/altef/heaps-android
+This project wouldn't be possible without the work done by: https://github.com/altef/heaps-android
 
 ## Structure
     .
@@ -10,7 +10,7 @@ The project wouldn't be possible without the work already done by: https://githu
     |   └── src/                     	
     |   |   └── main/			# This is where the code goes, split by language.
     |   |       ├── cpp/		# Various libraries are here, plus the C generated from your Haxe.
-    |   |       |   └── out/    # Put your generated C code in here. The folder doesn't exist on GIT, as it's what you generate and move from Heaps.
+    |   |       |   └── out/    # Put your generated C code in here. The folder is not included in Git, as it's what you generate and move from Heaps.
     |   |       ├── haxe/
     |   |       ├── java/		# Some necessary Java classes.
     |   |       ├── res/
@@ -27,30 +27,30 @@ The project wouldn't be possible without the work already done by: https://githu
 1. Clone/download the repo along with the submodules and subtrees: 
 `git clone --recursive https://github.com/4as/heaps-android`
 
-2. Open the directory in Android Studio. For reference, the project has been successfully built on `Android Studio Panda 1 | 2025.3.1 RC 1`.
+2. Open the directory in Android Studio. For reference, the project has been successfully built with `Android Studio Panda 1 | 2025.3.1 RC 1`.
     
-3. Make sure you have the NDK and CMake installed - you can do this in Android studio, by going to **Tools > SDK Manager**, and then clicking the **SDK Tools** tab. Make sure **NDK (side by side)** and **CMake** are selected.
+3. Make sure you have the NDK and CMake installed - you can do this in Android Studio, by going to **Tools > SDK Manager**, and then clicking the **SDK Tools** tab. Make sure **NDK (side by side)** and **CMake** are selected.
 
-4. The project is configured to run the current version of NDK `27.3.13750724` and CMAKE `3.10.2`. Android Studio should download those for you in the previous step, you just need to set the correct versions in `build.gradle`. Alternatively, you can download a specific version from here: [developer.android.com/ndk/downloads](https://developer.android.com/ndk/downloads), or if it becomes outdated sometime in the future, from here: [github.com/android/ndk/wiki/Unsupported-Downloads](https://github.com/android/ndk/wiki/Unsupported-Downloads). Manually downloaded NDK needs to go into the `ndk` directory inside your Android SDK directory. You can find it under **File > Project Structure** and then **SDK Location**.
+4. The project is configured to run the current version of NDK `27.3.13750724` and CMAKE `3.10.2`. Android Studio should download them for you in the previous step; you just need to set the correct versions in `build.gradle`. Alternatively, you can download a specific version from here: [developer.android.com/ndk/downloads](https://developer.android.com/ndk/downloads), or if it becomes outdated in the future, from here: [github.com/android/ndk/wiki/Unsupported-Downloads](https://github.com/android/ndk/wiki/Unsupported-Downloads). A manually downloaded NDK needs to be placed in `ndk` directory inside your Android SDK directory. You can find it under **File > Project Structure** and then **SDK Location**.
  
-5. Compile your app to C and put the generated code inside the `/app/src/cpp/out` directory. I highly recommend checking out the example app in the `/heaps-src` directory, as it contains not only the configuration, but also some helper methods you might find useful in your own project. The helper methods include software keyboard handling (which current Heaps doesn't provide) and ability to retrieve a writable directory for your save files and such.
+5. Compile your app to C and place the generated code inside the `/app/src/cpp/out` directory. I highly recommend checking out the example app in the `/heaps-src` directory, as it contains not only the configuration, but also some helper methods you might find useful in your own project. The helper methods include software keyboard handling (which current Heaps doesn't provide) and the ability to retrieve a writable directory for save files and similar data.
  
 6. Build the project. If you have a mobile device connected to your machine, you could even try pressing the run button to test it directly.
 
 ## Changes overview
 
-Making the project work took a lot of experimentation. If something doesn't work I probably won't be able to help with it.
+Making the project work took a lot of experimentation. If something doesn't work, I probably won't be able to help.
 Here are some things I've changed to fix the compilation issues:
-1. Updated SDL to version 2.32.2 and removed `android-project-ant`. SDL is added to the repo a subtree, to allow for those changes.
-2. Updated OpenAL-soft to version 1.21.0. Included as subtree to fix some compatibility issues and remove examples.
-3. Finally, the biggest change, was including Hashlink's 1.15.0 repo as subtree to update various libraries and includes.
+1. Updated SDL to version 2.32.2 and removed `android-project-ant`. SDL is added to the repo as a subtree, to allow for those changes.
+2. Updated OpenAL-soft to version 1.21.0. It is included as a subtree to fix compatibility issues and remove examples.
+3. Finally, the biggest change was including Hashlink's 1.15.0 repo as subtree to update various libraries and includes.
 
 To be more specific Hashlink required the following changes:
-1. Updated LibUV to use the full 1.9.1 source code. For some reason, Hashlink's repo doesn't include unix files (only win), which are need for Android.
-2. Updated PCRE to 10.45 and fixed various configuration problems. This was by far the hardest thing to get working. By default PCRE wants to use JIT functions, which Android doesn't support, so they had to be completely disabled. Except this lead to compilation errors, so I ultimately had to remove them and provide stubs (in `cpp/stubs.c`) so the thing would compile. I honestly have no idea what actually needs to be done to fix this properly...
+1. Updated LibUV to use the full 1.9.1 source code. For some reason, Hashlink's repo doesn't include unix files (only win), which are needed for Android.
+2. Updated PCRE to 10.45 and fixed various configuration problems. This was by far the hardest thing to get working. By default, PCRE attempts to use JIT functions, which Android does not support, so they had to be disabled completely. However, this led to compilation errors, so I ultimately removed them and provided stubs (in `cpp/stubs.c`) to allow the project to compile. I honestly have no idea what the proper long-term solution should be...
 3. Pulled some additional changes from HashLink's repo committed after 1.15 was released. Some reported issues were relevant to the compilation errors I was having, so the current code is made up of random patches. 
 
 ## Project overview
 
-The entry point to the application is in the `HeapsActivity` class, which extends `SDLActivity`. SDL is what connects the Java code to the native C - it calls `SDL_main()` inside the `cpp/jni.c` file, which in turn calls `hl_entry_point()` located in your `cpp/out/game.c` file, the one you have exported from Heaps along with rest of your application.
+The entry point to the application is in the `HeapsActivity` class, which extends `SDLActivity`. SDL is what connects the Java code to native C - it calls `SDL_main()` inside the `cpp/jni.c` file, which in turn calls `hl_entry_point()` located in your `cpp/out/game.c` file, the one exported from Heaps along with the rest of your application.
 
