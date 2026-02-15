@@ -1,7 +1,11 @@
 #include <jni.h>
+#include <SDL.h>
 
-extern int main(int argc, char *argv[]); // assuming that haxe->hl/c entry point is included (which includes hlc_main.c which includes the main function)
+extern void hl_entry_point();
 
-JNIEXPORT int JNICALL Java_io_heaps_android_HeapsActivity_startHL(JNIEnv* env, jclass cls) {
-    return main(0, NULL);
+int SDL_main(int argc, char *argv[]) {
+    (void)argc; // Unused parameter
+    (void)argv; // Unused parameter
+    hl_entry_point();
+    return 0;
 }

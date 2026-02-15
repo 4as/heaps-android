@@ -6,10 +6,10 @@
 	url = https://github.com/HeapsIO/heaps
 [submodule "app/src/main/cpp/sdl2"]
 	path = app/src/main/cpp/sdl2
-	url = https://github.com/spurious/SDL-mirror.git
+	url = https://github.com/spurious/SDL-mirror
 [submodule "app/src/main/cpp/libjpeg-turbo"]
 	path = app/src/main/cpp/libjpeg-turbo
-	url = https://github.com/openstf/android-libjpeg-turbo.git
+	url = https://github.com/openstf/android-libjpeg-turbo
 [submodule "app/src/main/cpp/openal-soft"]
 	path = app/src/main/cpp/openal-soft
-	url = https://github.com/kcat/openal-soft.git
+	url = https://github.com/kcat/openal-soft
