@@ -112,6 +112,8 @@ typedef ALuint64SOFT ALuint64;
 #define U64(x) ((ALuint64)(x##ul))
 #elif SIZEOF_LONG_LONG == 8
 #define U64(x) ((ALuint64)(x##ull))
+#else
+#define U64(x) ((ALuint64)(x##ULL))
 #endif
 #endif
 
@@ -182,6 +184,14 @@ inline int fallback_ctz64(ALuint64 value)
     return fallback_popcnt64(~value & (value - 1));
 }
 #define CTZ64 fallback_ctz64
+#endif
+
+#ifndef ASSUME_ALIGNED
+#ifdef __GNUC__
+#define ASSUME_ALIGNED(x, y) __builtin_assume_aligned(x, y)
+#else
+#define ASSUME_ALIGNED(x, y) (x)
+#endif
 #endif
 
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)

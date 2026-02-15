@@ -8,6 +8,10 @@
 /* Define a built-in call indicating an aligned data pointer */
 #define ASSUME_ALIGNED(x, y) ${ASSUME_ALIGNED_DECL}
 
+// Force definitions for Android build environment
+#define _DEFAULT_SOURCE
+#define HAVE_GCC_DESTRUCTOR 1
+
 /* Define if HRTF data is embedded in the library */
 #cmakedefine ALSOFT_EMBED_HRTF_DATA
 
@@ -128,10 +132,10 @@
 /* Define if we have C11 _Atomic support */
 #cmakedefine HAVE_C11_ATOMIC
 
-/* Define if we have GCC's destructor attribute */
+/* Define if we have GCC\'s destructor attribute */
 #cmakedefine HAVE_GCC_DESTRUCTOR
 
-/* Define if we have GCC's format attribute */
+/* Define if we have GCC\'s format attribute */
 #cmakedefine HAVE_GCC_FORMAT
 
 /* Define if we have stdint.h */
@@ -185,7 +189,7 @@
 /* Define if we have fenv.h */
 #cmakedefine HAVE_FENV_H
 
-/* Define if we have GCC's __get_cpuid() */
+/* Define if we have GCC\'s __get_cpuid() */
 #cmakedefine HAVE_GCC_GET_CPUID
 
 /* Define if we have the __cpuid() intrinsic */
@@ -205,9 +209,6 @@
 
 /* Define if we have pthread_setschedparam() */
 #cmakedefine HAVE_PTHREAD_SETSCHEDPARAM
-
-/* Define if we have pthread_setname_np() */
-#cmakedefine HAVE_PTHREAD_SETNAME_NP
 
 /* Define if pthread_setname_np() only accepts one parameter */
 #cmakedefine PTHREAD_SETNAME_NP_ONE_PARAM

@@ -1,5 +1,4 @@
 # CMake build file list for OpenAL
-
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 
 PROJECT(OpenAL)
@@ -224,6 +223,7 @@ UNSET(OLD_REQUIRED_LIBRARIES)
 # Include liblog for Android logging
 CHECK_LIBRARY_EXISTS(log __android_log_print "" HAVE_LIBLOG)
 IF(HAVE_LIBLOG)
+    MESSAGE("~~LIBLOG found, adding requirement for it!")
     SET(EXTRA_LIBS log ${EXTRA_LIBS})
     SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} log)
 ENDIF()
@@ -382,14 +382,6 @@ ELSE()
             SET(C_FLAGS ${C_FLAGS} -fvisibility=hidden)
         ENDIF()
     ENDIF()
-
-    CHECK_C_SOURCE_COMPILES("int foo __attribute__((aligned(16)));
-                             int main() {return 0;}" HAVE_ATTRIBUTE_ALIGNED)
-    IF(HAVE_ATTRIBUTE_ALIGNED)
-        SET(ALIGN_DECL "__attribute__((aligned(x)))")
-    ENDIF()
-
-    SET(CMAKE_REQUIRED_FLAGS "${OLD_REQUIRED_FLAGS}")
 ENDIF()
 
 CHECK_C_SOURCE_COMPILES("
@@ -431,6 +423,11 @@ CHECK_C_COMPILER_FLAG(-mfpu=neon HAVE_MFPU_NEON_SWITCH)
 IF(HAVE_MFPU_NEON_SWITCH)
     SET(FPU_NEON_SWITCH "-mfpu=neon")
 ENDIF()
+
+# Patch from issue comment
+if(ANDROID_ABI MATCHES "arm.*")
+    set(HAVE_XMMINTRIN_H 0)
+endif()
 
 SET(FPMATH_SET "0")
 IF(CMAKE_SIZEOF_VOID_P MATCHES "4")
@@ -861,86 +858,88 @@ SET(HAVE_OPENSL     0)
 SET(HAVE_WAVE       0)
 SET(HAVE_SDL2       0)
 
-# Check for SSE support
-OPTION(ALSOFT_REQUIRE_SSE "Require SSE support" OFF)
-CHECK_INCLUDE_FILE(xmmintrin.h HAVE_XMMINTRIN_H "${SSE_SWITCH}")
-IF(HAVE_XMMINTRIN_H)
-    OPTION(ALSOFT_CPUEXT_SSE "Enable SSE support" ON)
-    IF(ALSOFT_CPUEXT_SSE)
-        IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
-            SET(HAVE_SSE 1)
-            SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse.c)
-            IF(SSE_SWITCH)
-                SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse.c PROPERTIES
-                                            COMPILE_FLAGS "${SSE_SWITCH}")
+if(NOT (ANDROID_ABI MATCHES "arm.*"))
+    # Check for SSE support
+    OPTION(ALSOFT_REQUIRE_SSE "Require SSE support" OFF)
+    CHECK_INCLUDE_FILE(xmmintrin.h HAVE_XMMINTRIN_H "${SSE_SWITCH}")
+    IF(HAVE_XMMINTRIN_H)
+        OPTION(ALSOFT_CPUEXT_SSE "Enable SSE support" ON)
+        IF(ALSOFT_CPUEXT_SSE)
+            IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
+                SET(HAVE_SSE 1)
+                SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse.c)
+                IF(SSE_SWITCH)
+                    SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse.c PROPERTIES
+                                                COMPILE_FLAGS "${SSE_SWITCH}")
+                ENDIF()
+                SET(CPU_EXTS "${CPU_EXTS}, SSE")
             ENDIF()
-            SET(CPU_EXTS "${CPU_EXTS}, SSE")
         ENDIF()
     ENDIF()
-ENDIF()
-IF(ALSOFT_REQUIRE_SSE AND NOT HAVE_SSE)
-    MESSAGE(FATAL_ERROR "Failed to enabled required SSE CPU extensions")
-ENDIF()
+    IF(ALSOFT_REQUIRE_SSE AND NOT HAVE_SSE)
+        MESSAGE(FATAL_ERROR "Failed to enabled required SSE CPU extensions")
+    ENDIF()
 
-OPTION(ALSOFT_REQUIRE_SSE2 "Require SSE2 support" OFF)
-CHECK_INCLUDE_FILE(emmintrin.h HAVE_EMMINTRIN_H "${SSE2_SWITCH}")
-IF(HAVE_EMMINTRIN_H)
-    OPTION(ALSOFT_CPUEXT_SSE2 "Enable SSE2 support" ON)
-    IF(HAVE_SSE AND ALSOFT_CPUEXT_SSE2)
-        IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
-            SET(HAVE_SSE2 1)
-            SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse2.c)
-            IF(SSE2_SWITCH)
-                SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse2.c PROPERTIES
-                                            COMPILE_FLAGS "${SSE2_SWITCH}")
+    OPTION(ALSOFT_REQUIRE_SSE2 "Require SSE2 support" OFF)
+    CHECK_INCLUDE_FILE(emmintrin.h HAVE_EMMINTRIN_H "${SSE2_SWITCH}")
+    IF(HAVE_EMMINTRIN_H)
+        OPTION(ALSOFT_CPUEXT_SSE2 "Enable SSE2 support" ON)
+        IF(HAVE_SSE AND ALSOFT_CPUEXT_SSE2)
+            IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
+                SET(HAVE_SSE2 1)
+                SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse2.c)
+                IF(SSE2_SWITCH)
+                    SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse2.c PROPERTIES
+                                                COMPILE_FLAGS "${SSE2_SWITCH}")
+                ENDIF()
+                SET(CPU_EXTS "${CPU_EXTS}, SSE2")
             ENDIF()
-            SET(CPU_EXTS "${CPU_EXTS}, SSE2")
         ENDIF()
     ENDIF()
-ENDIF()
-IF(ALSOFT_REQUIRE_SSE2 AND NOT HAVE_SSE2)
-    MESSAGE(FATAL_ERROR "Failed to enable required SSE2 CPU extensions")
-ENDIF()
+    IF(ALSOFT_REQUIRE_SSE2 AND NOT HAVE_SSE2)
+        MESSAGE(FATAL_ERROR "Failed to enable required SSE2 CPU extensions")
+    ENDIF()
 
-OPTION(ALSOFT_REQUIRE_SSE3 "Require SSE3 support" OFF)
-CHECK_INCLUDE_FILE(pmmintrin.h HAVE_PMMINTRIN_H "${SSE3_SWITCH}")
-IF(HAVE_EMMINTRIN_H)
-    OPTION(ALSOFT_CPUEXT_SSE3 "Enable SSE3 support" ON)
-    IF(HAVE_SSE2 AND ALSOFT_CPUEXT_SSE3)
-        IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
-            SET(HAVE_SSE3 1)
-            SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse3.c)
-            IF(SSE2_SWITCH)
-                SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse3.c PROPERTIES
-                                            COMPILE_FLAGS "${SSE3_SWITCH}")
+    OPTION(ALSOFT_REQUIRE_SSE3 "Require SSE3 support" OFF)
+    CHECK_INCLUDE_FILE(pmmintrin.h HAVE_PMMINTRIN_H "${SSE3_SWITCH}")
+    IF(HAVE_EMMINTRIN_H)
+        OPTION(ALSOFT_CPUEXT_SSE3 "Enable SSE3 support" ON)
+        IF(HAVE_SSE2 AND ALSOFT_CPUEXT_SSE3)
+            IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
+                SET(HAVE_SSE3 1)
+                SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse3.c)
+                IF(SSE2_SWITCH)
+                    SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse3.c PROPERTIES
+                                                COMPILE_FLAGS "${SSE3_SWITCH}")
+                ENDIF()
+                SET(CPU_EXTS "${CPU_EXTS}, SSE3")
             ENDIF()
-            SET(CPU_EXTS "${CPU_EXTS}, SSE3")
         ENDIF()
     ENDIF()
-ENDIF()
-IF(ALSOFT_REQUIRE_SSE3 AND NOT HAVE_SSE3)
-    MESSAGE(FATAL_ERROR "Failed to enable required SSE3 CPU extensions")
-ENDIF()
+    IF(ALSOFT_REQUIRE_SSE3 AND NOT HAVE_SSE3)
+        MESSAGE(FATAL_ERROR "Failed to enable required SSE3 CPU extensions")
+    ENDIF()
 
-OPTION(ALSOFT_REQUIRE_SSE4_1 "Require SSE4.1 support" OFF)
-CHECK_INCLUDE_FILE(smmintrin.h HAVE_SMMINTRIN_H "${SSE4_1_SWITCH}")
-IF(HAVE_SMMINTRIN_H)
-    OPTION(ALSOFT_CPUEXT_SSE4_1 "Enable SSE4.1 support" ON)
-    IF(HAVE_SSE2 AND ALSOFT_CPUEXT_SSE4_1)
-        IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
-            SET(HAVE_SSE4_1 1)
-            SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse41.c)
-            IF(SSE4_1_SWITCH)
-                SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse41.c PROPERTIES
-                                            COMPILE_FLAGS "${SSE4_1_SWITCH}")
+    OPTION(ALSOFT_REQUIRE_SSE4_1 "Require SSE4.1 support" OFF)
+    CHECK_INCLUDE_FILE(smmintrin.h HAVE_SMMINTRIN_H "${SSE4_1_SWITCH}")
+    IF(HAVE_SMMINTRIN_H)
+        OPTION(ALSOFT_CPUEXT_SSE4_1 "Enable SSE4.1 support" ON)
+        IF(HAVE_SSE2 AND ALSOFT_CPUEXT_SSE4_1)
+            IF(ALIGN_DECL OR HAVE_C11_ALIGNAS)
+                SET(HAVE_SSE4_1 1)
+                SET(ALC_OBJS  ${ALC_OBJS} Alc/mixer/mixer_sse41.c)
+                IF(SSE4_1_SWITCH)
+                    SET_SOURCE_FILES_PROPERTIES(Alc/mixer/mixer_sse41.c PROPERTIES
+                                                COMPILE_FLAGS "${SSE4_1_SWITCH}")
+                ENDIF()
+                SET(CPU_EXTS "${CPU_EXTS}, SSE4.1")
             ENDIF()
-            SET(CPU_EXTS "${CPU_EXTS}, SSE4.1")
         ENDIF()
     ENDIF()
-ENDIF()
-IF(ALSOFT_REQUIRE_SSE4_1 AND NOT HAVE_SSE4_1)
-    MESSAGE(FATAL_ERROR "Failed to enable required SSE4.1 CPU extensions")
-ENDIF()
+    IF(ALSOFT_REQUIRE_SSE4_1 AND NOT HAVE_SSE4_1)
+        MESSAGE(FATAL_ERROR "Failed to enable required SSE4.1 CPU extensions")
+    ENDIF()
+endif()
 
 # Check for ARM Neon support
 OPTION(ALSOFT_REQUIRE_NEON "Require ARM Neon support" OFF)
@@ -1214,18 +1213,12 @@ ENDIF()
 
 # Check for OpenSL (Android) backend
 OPTION(ALSOFT_REQUIRE_OPENSL "Require OpenSL backend" OFF)
-CHECK_INCLUDE_FILES("SLES/OpenSLES.h;SLES/OpenSLES_Android.h" HAVE_SLES_OPENSLES_ANDROID_H)
-IF(HAVE_SLES_OPENSLES_ANDROID_H)
-    CHECK_SHARED_FUNCTION_EXISTS(slCreateEngine "SLES/OpenSLES.h" OpenSLES "" HAVE_LIBOPENSLES)
-    IF(HAVE_LIBOPENSLES)
-        OPTION(ALSOFT_BACKEND_OPENSL "Enable OpenSL backend" ON)
-        IF(ALSOFT_BACKEND_OPENSL)
-            SET(HAVE_OPENSL 1)
-            SET(ALC_OBJS  ${ALC_OBJS} Alc/backends/opensl.c)
-            SET(BACKENDS  "${BACKENDS} OpenSL,")
-            SET(EXTRA_LIBS OpenSLES ${EXTRA_LIBS})
-        ENDIF()
-    ENDIF()
+OPTION(ALSOFT_BACKEND_OPENSL "Enable OpenSL backend" ON)
+IF(ALSOFT_BACKEND_OPENSL)
+    SET(HAVE_OPENSL 1)
+    SET(ALC_OBJS  ${ALC_OBJS} Alc/backends/opensl.c)
+    SET(BACKENDS  "${BACKENDS} OpenSL,")
+    SET(EXTRA_LIBS OpenSLES ${EXTRA_LIBS})
 ENDIF()
 IF(ALSOFT_REQUIRE_OPENSL AND NOT HAVE_OPENSL)
     MESSAGE(FATAL_ERROR "Failed to enabled required OpenSL backend")
@@ -1287,6 +1280,9 @@ FILE(MAKE_DIRECTORY "${NATIVE_BIN_DIR}")
 
 SET(BIN2H_COMMAND  "${NATIVE_BIN_DIR}bin2h")
 SET(BSINCGEN_COMMAND  "${NATIVE_BIN_DIR}bsincgen")
+
+#[[
+
 ADD_CUSTOM_COMMAND(OUTPUT "${BIN2H_COMMAND}" "${BSINCGEN_COMMAND}"
     COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" "${NATIVE_SRC_DIR}"
     COMMAND ${CMAKE_COMMAND} -E remove "${BIN2H_COMMAND}" "${BSINCGEN_COMMAND}"
@@ -1301,6 +1297,11 @@ ADD_CUSTOM_TARGET(native-tools
     DEPENDS "${BIN2H_COMMAND}" "${BSINCGEN_COMMAND}"
     VERBATIM
 )
+
+]]
+
+file(COPY ${OpenAL_SOURCE_DIR}/../openal-nativetools/bin2h.exe DESTINATION ${NATIVE_BIN_DIR})
+file(COPY ${OpenAL_SOURCE_DIR}/../openal-nativetools/bsincgen.exe DESTINATION ${NATIVE_BIN_DIR})
 
 option(ALSOFT_EMBED_HRTF_DATA "Embed the HRTF data files (increases library footprint)" ON)
 if(ALSOFT_EMBED_HRTF_DATA)
@@ -1432,6 +1433,14 @@ ELSE()
     IF(WIN32)
         SET_TARGET_PROPERTIES(${IMPL_TARGET} PROPERTIES PREFIX "")
     ENDIF()
+    # Add this line to explicitly set visibility to default for shared libraries on non-Windows
+    # This should ensure that OpenAL functions are exported and visible.
+    TARGET_COMPILE_OPTIONS(${IMPL_TARGET} PRIVATE ${C_FLAGS} -fvisibility=default)
+    TARGET_LINK_LIBRARIES(${IMPL_TARGET}
+        PRIVATE ${LINKER_FLAGS} ${COMMON_LIB} ${EXTRA_LIBS} ${MATH_LIB})
+    IF(TARGET build_version)
+        ADD_DEPENDENCIES(${IMPL_TARGET} build_version)
+    ENDIF()
 ENDIF()
 SET_TARGET_PROPERTIES(${IMPL_TARGET} PROPERTIES OUTPUT_NAME ${LIBNAME}
     VERSION ${LIB_VERSION}
@@ -1441,35 +1450,9 @@ TARGET_COMPILE_DEFINITIONS(${IMPL_TARGET}
     PRIVATE AL_BUILD_LIBRARY AL_ALEXT_PROTOTYPES ${CPP_DEFS})
 TARGET_INCLUDE_DIRECTORIES(${IMPL_TARGET}
     PRIVATE "${OpenAL_SOURCE_DIR}/OpenAL32/Include" "${OpenAL_SOURCE_DIR}/Alc" ${INC_PATHS})
-TARGET_COMPILE_OPTIONS(${IMPL_TARGET} PRIVATE ${C_FLAGS})
-TARGET_LINK_LIBRARIES(${IMPL_TARGET}
-    PRIVATE ${LINKER_FLAGS} ${COMMON_LIB} ${EXTRA_LIBS} ${MATH_LIB})
-IF(TARGET build_version)
-    ADD_DEPENDENCIES(${IMPL_TARGET} build_version)
-ENDIF()
-
-IF(WIN32 AND MINGW AND ALSOFT_BUILD_IMPORT_LIB AND NOT LIBTYPE STREQUAL "STATIC")
-    FIND_PROGRAM(SED_EXECUTABLE NAMES sed DOC "sed executable")
-    FIND_PROGRAM(DLLTOOL_EXECUTABLE NAMES "${DLLTOOL}" DOC "dlltool executable")
-    IF(NOT SED_EXECUTABLE OR NOT DLLTOOL_EXECUTABLE)
-        MESSAGE(STATUS "")
-        IF(NOT SED_EXECUTABLE)
-            MESSAGE(STATUS "WARNING: Cannot find sed, disabling .def/.lib generation")
-        ENDIF()
-        IF(NOT DLLTOOL_EXECUTABLE)
-            MESSAGE(STATUS "WARNING: Cannot find dlltool, disabling .def/.lib generation")
-        ENDIF()
-    ELSE()
-        SET_PROPERTY(TARGET OpenAL APPEND_STRING PROPERTY LINK_FLAGS
-                        " -Wl,--output-def,OpenAL32.def")
-        ADD_CUSTOM_COMMAND(TARGET OpenAL POST_BUILD
-            COMMAND "${SED_EXECUTABLE}" -i -e "s/ @[^ ]*//" OpenAL32.def
-            COMMAND "${DLLTOOL_EXECUTABLE}" -d OpenAL32.def -l OpenAL32.lib -D OpenAL32.dll
-            COMMENT "Stripping ordinals from OpenAL32.def and generating OpenAL32.lib..."
-            VERBATIM
-        )
-    ENDIF()
-ENDIF()
+# The duplicate TARGET_COMPILE_DEFINITIONS and TARGET_INCLUDE_DIRECTORIES are likely a copy-paste error.
+# The important part is to ensure -fvisibility=default is set.
+# Consolidate these for clarity and correctness.
 
 IF(ALSOFT_INSTALL)
     INSTALL(TARGETS OpenAL EXPORT OpenAL
@@ -1692,7 +1675,7 @@ IF(ALSOFT_EXAMPLES)
                 PRIVATE ${SDL2_INCLUDE_DIR} ${SDL_SOUND_INCLUDE_DIR})
             TARGET_COMPILE_OPTIONS(alloopback PRIVATE ${C_FLAGS})
             TARGET_LINK_LIBRARIES(alloopback
-                PRIVATE ${LINKER_FLAGS} ${SDL_SOUND_LIBRARIES} ${SDL2_LIBRARY} ex-common common
+                PRIVATE ${LINKER_FLAGS} ${SDL2_LIBRARY} ${SDL_SOUND_LIBRARIES} ex-common common
                         OpenAL ${MATH_LIB})
 
             ADD_EXECUTABLE(alhrtf examples/alhrtf.c)
@@ -1701,7 +1684,7 @@ IF(ALSOFT_EXAMPLES)
                 PRIVATE ${SDL2_INCLUDE_DIR} ${SDL_SOUND_INCLUDE_DIR})
             TARGET_COMPILE_OPTIONS(alhrtf PRIVATE ${C_FLAGS})
             TARGET_LINK_LIBRARIES(alhrtf
-                PRIVATE ${LINKER_FLAGS} ${SDL_SOUND_LIBRARIES} ${SDL2_LIBRARY} ex-common common
+                PRIVATE ${LINKER_FLAGS} ${SDL2_LIBRARY} ${SDL_SOUND_LIBRARIES} ex-common common
                         OpenAL ${MATH_LIB})
 
             IF(ALSOFT_INSTALL)
