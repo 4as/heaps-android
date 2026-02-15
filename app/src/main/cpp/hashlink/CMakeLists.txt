@@ -169,7 +169,7 @@ set_target_properties(libhl
     PROPERTIES
     VERSION ${HL_VERSION}
     SOVERSION ${HL_VERSION_MAJOR}
-    COMPILE_DEFINITIONS "_USRDLL;LIBHL_EXPORTS;HAVE_CONFIG_H;PCRE2_CODE_UNIT_WIDTH=16"
+    COMPILE_DEFINITIONS "_USRDLL;LIBHL_EXPORTS;HAVE_CONFIG_H;PCRE2_CODE_UNIT_WIDTH=16;SDL_MAIN_HANDLED"
 )
 
 if (WITH_VM)
@@ -197,6 +197,10 @@ if(WIN32)
     target_link_libraries(libhl ws2_32 user32)
 else()
     target_link_libraries(libhl m dl pthread)
+    if(ANDROID)
+        target_link_libraries(libhl log GLESv1_CM GLESv2 EGL dl OpenSLES)
+        target_compile_options(libhl PUBLIC "-Wl,--export-dynamic")
+    endif()
 endif()
 
 if(BUILD_TESTING)

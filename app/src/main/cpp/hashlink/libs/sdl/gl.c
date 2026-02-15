@@ -175,7 +175,9 @@ HL_PRIM void HL_NAME(gl_color_mask)( bool r, bool g, bool b, bool a ) {
 }
 
 HL_PRIM void HL_NAME(gl_color_maski)( int i, bool r, bool g, bool b, bool a ) {
+#ifndef HL_NO_SSBO
 	glColorMaski(i, r, g, b, a);
+#endif
 }
 
 HL_PRIM void HL_NAME(gl_stencil_mask_separate)(int face, int mask) {
@@ -693,19 +695,17 @@ HL_PRIM void HL_NAME(gl_uniform_block_binding)( vdynamic *p, int index, int bind
 // SSBOs
 
 HL_PRIM int HL_NAME(gl_get_program_resource_index)( vdynamic *p, int type, vstring *name ) {
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(HL_NO_SSBO)
 	char *cname = hl_to_utf8(name->bytes);
 	return (int)glGetProgramResourceIndex(p->v.i, type, cname);
 #else
-	hl_error("glGetProgramResourceIndex is not supported on Apple platforms");
+	return -1;
 #endif
 }
 
 HL_PRIM void HL_NAME(gl_shader_storage_block_binding)( vdynamic *p, int index, int binding ) {
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(HL_NO_SSBO)
 	glShaderStorageBlockBinding(p->v.i, index, binding);
-#else
-	hl_error("glShaderStorageBlockBinding is not supported on Apple platforms");
 #endif
 }
 

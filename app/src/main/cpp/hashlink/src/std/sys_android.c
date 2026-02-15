@@ -80,8 +80,8 @@ static JNIEnv* hl_android_jni_get_env(void)
 	return env;
 }
 
-/* JNI_OnLoad is automatically called when loading shared library through System.loadLibrary() Java call */
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
+/* HashLink_JNI_OnLoad is automatically called when loading shared library through System.loadLibrary() Java call */
+JNIEXPORT jint JNICALL HashLink_JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv *env;
 	jclass cls;
