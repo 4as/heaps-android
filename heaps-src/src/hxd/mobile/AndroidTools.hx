@@ -1,7 +1,7 @@
 package hxd.mobile;
 
 #if mobile
-// The "package" name found in cpp/jni.c file (look for #define HL_NAME(n) forus_##n). It can be whatever you want, as long as the two entries match.
+// The "package" name found in cpp/stubs.c file (look for #define HL_NAME(n) forus_##n). It can be whatever you want, as long as the two entries match.
 @:hlNative("forus")
 class AndroidTools
 {

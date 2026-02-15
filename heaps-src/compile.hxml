@@ -9,7 +9,7 @@
 -lib hlopenal
 -D hlgen.makefile=vs2017
 -D hlgen.makefilepath=out
-#--define mobile=true
+--define mobile=true
 -hl out/game.c
 --next
 -lib hlsdl:1.15.0
