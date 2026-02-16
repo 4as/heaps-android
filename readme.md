@@ -54,3 +54,6 @@ To be more specific Hashlink required the following changes:
 
 The entry point to the application is in the `HeapsActivity` class, which extends `SDLActivity`. SDL is what connects the Java code to native C - it calls `SDL_main()` inside the `cpp/jni.c` file, which in turn calls `hl_entry_point()` located in your `cpp/out/game.c` file, the one exported from Heaps along with the rest of your application.
 
+## Self-promotion
+
+The project was used to realase [Yeet My Darknesss](https://4as.itch.io/yeet-my-darknesss) on Itch.io.
